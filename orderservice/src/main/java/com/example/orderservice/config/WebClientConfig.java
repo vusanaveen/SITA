@@ -5,12 +5,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**
- * Configuration for WebClient.
+ * WebClient configuration for OrderService.
  * 
- * This class provides WebClient bean configuration for
- * HTTP communication with other services.
- * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @Configuration

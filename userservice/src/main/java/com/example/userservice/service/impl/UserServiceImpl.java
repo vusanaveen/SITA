@@ -3,8 +3,8 @@ package com.example.userservice.service.impl;
 import com.example.userservice.dto.UserRequest;
 import com.example.userservice.dto.UserResponse;
 import com.example.userservice.entity.User;
-import com.example.userservice.exception.ResourceNotFoundException;
-import com.example.userservice.exception.ValidationException;
+import com.example.common.exception.ResourceNotFoundException;
+import com.example.common.exception.ValidationException;
 import com.example.userservice.repository.UserRepository;
 import com.example.userservice.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * This class provides the business logic for user management operations
  * including CRUD operations, validation, and data transformation.
  * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @Service
@@ -85,17 +85,7 @@ public class UserServiceImpl implements UserService {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
         
-        // Check if username is being changed and if it conflicts with existing user
-        if (!existingUser.getUsername().equals(userRequest.getUsername()) &&
-                userRepository.existsByUsername(userRequest.getUsername())) {
-            throw new ValidationException("Username already exists: " + userRequest.getUsername());
-        }
-        
-        // Check if email is being changed and if it conflicts with existing user
-        if (!existingUser.getEmail().equals(userRequest.getEmail()) &&
-                userRepository.existsByEmail(userRequest.getEmail())) {
-            throw new ValidationException("Email already exists: " + userRequest.getEmail());
-        }
+        // Requirement: Duplicate handling is not enforced. No repository duplicate checks here.
         
         existingUser.setUsername(userRequest.getUsername());
         existingUser.setPassword(userRequest.getPassword());
@@ -136,14 +126,7 @@ public class UserServiceImpl implements UserService {
         if (userRequest == null) {
             throw new ValidationException("User request cannot be null");
         }
-        
-        if (userRepository.existsByUsername(userRequest.getUsername())) {
-            throw new ValidationException("Username already exists: " + userRequest.getUsername());
-        }
-        
-        if (userRepository.existsByEmail(userRequest.getEmail())) {
-            throw new ValidationException("Email already exists: " + userRequest.getEmail());
-        }
+        // Requirement: Duplicate handling is not enforced. No repository duplicate checks here.
     }
 
     /**

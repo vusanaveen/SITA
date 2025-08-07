@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
  * This entity is used for storing user information including
  * username, password, and email address.
  * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @Entity

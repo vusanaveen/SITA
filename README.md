@@ -5,17 +5,24 @@ This project demonstrates a microservices architecture using Spring Boot 3+ and 
 ## Project Structure
 
 ```
-microservices/
+SITA/
+├── shared-common/      # Shared library for common config, DTOs, and exceptions
+│   ├── src/
+│   └── pom.xml
 ├── userservice/          # User management service
 │   ├── src/
-│   ├── pom.xml
-│   └── application.yml
+│   └── pom.xml
 ├── orderservice/         # Order management service
 │   ├── src/
-│   ├── pom.xml
-│   └── application.yml
+│   └── pom.xml
+├── pom.xml               # Root parent POM (builds all modules)
 └── README.md
 ```
+
+### About `shared-common`
+
+- Used by: Both `userservice` and `orderservice` (built first during root build).
+
 
 ## Technology Stack
 
@@ -28,20 +35,35 @@ microservices/
 - **JUnit 5 + Mockito** - Testing framework
 - **Maven** - Build tool
 - **Jacoco** - Code coverage
-- **Swagger/OpenAPI 3** - API documentation and testing interface
+- **springdoc-openapi** (OpenAPI 3) with Swagger UI (code-first generation)
 
 ## Services
 
 ### UserService (Port: 8081)
 - CRUD operations for User entity
-- Endpoints: POST, GET, PUT, DELETE /users/{id}
-- **API Documentation**: http://localhost:8081/swagger-ui.html
+- Endpoints (as required):
+  1. POST `/users` — Create a user
+  2. GET `/users/{id}` — Retrieve a user by ID
+  3. PUT `/users/{id}` — Update a user by ID
+  4. DELETE `/users/{id}` — Delete a user by ID
+- Extra endpoints (for demo/testing convenience):
+  - GET `/users` — List all users
+  - GET `/users/{id}/exists` — Lightweight existence check used by OrderService
+ - **Swagger UI**: http://localhost:8081/swagger-ui/index.html
 
 ### OrderService (Port: 8082)
 - CRUD operations for Order entity
-- Validates user existence via UserService before creating orders
-- Endpoints: POST, GET, PUT, DELETE /orders/{id}
-- **API Documentation**: http://localhost:8082/swagger-ui.html
+- Validates user existence via UserService before creating/updating orders
+- Endpoints (as required):
+  1. POST `/orders` — Create an order
+  2. GET `/orders/{id}` — Retrieve an order by ID
+  3. PUT `/orders/{id}` — Update an order by ID
+  4. DELETE `/orders/{id}` — Delete an order by ID
+- Extra endpoints (for demo/testing convenience):
+  - GET `/orders` — List all orders
+  - GET `/orders/user/{userId}` — List all orders for a user
+ - **Swagger UI**: http://localhost:8082/swagger-ui/index.html
+
 
 ## Prerequisites
 
@@ -51,15 +73,17 @@ microservices/
 
 ## Build Instructions
 
-### Build All Services
+### Build from Root (recommended)
 ```bash
-# Build UserService
-cd userservice
+mvn clean install
+```
+This builds all modules in the correct dependency order: `shared-common` → `userservice` → `orderservice`.
+
+### Build a Single Module
+```bash
+# Only userservice//orderservice cd 
 mvn clean install
 
-# Build OrderService
-cd ../orderservice
-mvn clean install
 ```
 
 ### Run Services
@@ -70,6 +94,7 @@ cd userservice
 mvn spring-boot:run
 ```
 UserService will be available at: http://localhost:8081
+Swagger UI: `http://localhost:8081/swagger-ui/index.html`
 
 #### OrderService
 ```bash
@@ -77,6 +102,7 @@ cd orderservice
 mvn spring-boot:run
 ```
 OrderService will be available at: http://localhost:8082
+Swagger UI: `http://localhost:8082/swagger-ui/index.html`
 
 ## Testing
 
@@ -86,10 +112,13 @@ OrderService will be available at: http://localhost:8082
 cd userservice
 mvn test jacoco:report
 
+
+
 # OrderService tests
 cd ../orderservice
 mvn test jacoco:report
-```
+
+
 
 ### Coverage Reports
 - UserService: `userservice/target/site/jacoco/index.html`
@@ -97,10 +126,10 @@ mvn test jacoco:report
 
 ## API Documentation
 
-Both services include comprehensive Swagger/OpenAPI documentation:
+We use `springdoc-openapi` to generate OpenAPI 3 specs and serve Swagger UI.
 
-- **UserService API Docs**: http://localhost:8081/swagger-ui.html
-- **OrderService API Docs**: http://localhost:8082/swagger-ui.html
+- UserService: `http://localhost:8081/swagger-ui/index.html`
+- OrderService: `http://localhost:8082/swagger-ui/index.html`
 
 The documentation includes:
 - Interactive API testing interface
@@ -187,22 +216,16 @@ DELETE /orders/{id}
 
 ## Sample Data
 
-Both services include sample data that is automatically loaded on startup:
+Sample data is auto-seeded on application startup. No profiles or extra configuration needed.
 
-### UserService Sample Data
-- User ID: 1, Username: "john_doe", Email: "john@example.com"
-- User ID: 2, Username: "jane_smith", Email: "jane@example.com"
-
-### OrderService Sample Data
-- Order ID: 1, User ID: 1, Product: "Laptop", Quantity: 1, Price: 999.99
-- Order ID: 2, User ID: 2, Product: "Mouse", Quantity: 2, Price: 29.99
+Just start the services and use Swagger UI to try the endpoints.
 
 ## Exception Handling
 
 The services include centralized exception handling with meaningful HTTP status codes:
 
 - `ResourceNotFoundException` - 404 Not Found
-- `InvalidUserException` - 400 Bad Request
+- `InvalidUserException` - 400 Bad Request (for invalid user references)
 - `ValidationException` - 400 Bad Request
 - `InternalServerException` - 500 Internal Server Error
 
@@ -211,13 +234,13 @@ The services include centralized exception handling with meaningful HTTP status 
 OrderService communicates with UserService to validate user existence before creating orders:
 
 1. OrderService receives order creation request
-2. Validates user exists by calling UserService GET /users/{userId}
-3. If user not found, throws `InvalidUserException`
+2. Validates user exists by calling UserService GET /users/{userId}/exists
+3. If user not found, throws `InvalidUserException` (400 Bad Request)
 4. If user exists, creates the order
 
 ## Assumptions
 
-- Duplicate user validation not required (allowed)
+- Duplicate user validation is not enforced (allowed)
 - Passwords stored in plain text (no encryption)
 - No pagination or filtering required
 - No API gateway or service discovery
@@ -226,13 +249,32 @@ OrderService communicates with UserService to validate user existence before cre
 
 ## Code Coverage
 
-Both services achieve 100% code coverage through comprehensive unit tests:
+Both services include comprehensive unit and slice tests:
 
 - Controller layer tests using `@WebMvcTest`
 - Service layer tests with mocked dependencies
 - Repository layer tests using `@DataJpaTest`
 - Exception handling tests
-- Integration tests for service-to-service communication
+
+Generate coverage reports with Jacoco (see commands above) and open the HTML reports to review coverage.
+
+## Acceptance Criteria Mapping (for reviewer)
+
+- UserService
+  - Should be able to add user — POST `/users` (visible as “1. Create user” in Swagger)
+  - Should be able to retrieve users by Id — GET `/users/{id}` (“2. Get user by ID”)
+  - Should be able to update user by Id — PUT `/users/{id}` (“3. Update user by ID”)
+  - Should be able to delete user by Id — DELETE `/users/{id}` (“4. Delete user by ID”)
+  - Handling of duplicate users should not be handled — no duplicate checks enforced in service
+  - Exception Handling — centralized `@RestControllerAdvice`, custom exceptions and consistent status codes
+
+- OrderService
+  - Communicates with UserService to validate user existence before creating an order
+  - Should be able to create order — POST `/orders` (“1. Create order”)
+  - Should be able to retrieve order by Id — GET `/orders/{id}` (“2. Get order by ID”)
+  - Should be able to update order by Id — PUT `/orders/{id}` (“3. Update order by ID”)
+  - Should be able to delete order by Id — DELETE `/orders/{id}` (“4. Delete order by ID”)
+  - Exception Handling — centralized `@RestControllerAdvice`, custom exceptions and consistent status codes
 
 ## Development Guidelines
 
@@ -261,13 +303,9 @@ Both services achieve 100% code coverage through comprehensive unit tests:
    - Check network connectivity between services
    - Validate service URLs in configuration
 
-### Logs
+### H2 Console
 
-Check application logs for detailed error information:
-```bash
-# UserService logs
-tail -f userservice/logs/application.log
+- UserService H2 Console: `http://localhost:8081/h2-console`
+- OrderService H2 Console: `http://localhost:8082/h2-console`
 
-# OrderService logs
-tail -f orderservice/logs/application.log
-```
+Use JDBC URLs from each service's `application.yml` (e.g., `jdbc:h2:mem:userdb`, `jdbc:h2:mem:orderdb`).

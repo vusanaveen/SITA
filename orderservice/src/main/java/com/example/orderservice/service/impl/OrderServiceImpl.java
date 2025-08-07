@@ -4,9 +4,9 @@ import com.example.orderservice.client.UserServiceClient;
 import com.example.orderservice.dto.OrderRequest;
 import com.example.orderservice.dto.OrderResponse;
 import com.example.orderservice.entity.Order;
-import com.example.orderservice.exception.InvalidUserException;
-import com.example.orderservice.exception.ResourceNotFoundException;
-import com.example.orderservice.exception.ValidationException;
+import com.example.common.exception.InvalidUserException;
+import com.example.common.exception.ResourceNotFoundException;
+import com.example.common.exception.ValidationException;
 import com.example.orderservice.repository.OrderRepository;
 import com.example.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  * This class provides the business logic for order management operations
  * including CRUD operations, user validation, and data transformation.
  * 
- * @author Naveen V
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @Service

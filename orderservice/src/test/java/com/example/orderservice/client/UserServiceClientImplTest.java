@@ -1,7 +1,7 @@
 package com.example.orderservice.client;
 
+import com.example.common.exception.InvalidUserException;
 import com.example.orderservice.client.impl.UserServiceClientImpl;
-import com.example.orderservice.exception.InvalidUserException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
  * 
  * Tests all client methods with mocked WebClient and 100% code coverage.
  * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @ExtendWith(MockitoExtension.class)
@@ -35,9 +35,6 @@ class UserServiceClientImplTest {
 
     @Mock
     private WebClient webClient;
-
-    @Mock
-    private WebClient.RequestHeadersUriSpec requestHeadersUriSpec;
 
     @Mock
     private WebClient.ResponseSpec responseSpec;
@@ -54,17 +51,18 @@ class UserServiceClientImplTest {
     @Test
     @DisplayName("Should return true when user exists")
     void shouldReturnTrueWhenUserExists() {
-        // Given
         Mono<ResponseEntity<Void>> responseMono = Mono.just(ResponseEntity.ok().build());
+        @SuppressWarnings("rawtypes")
+        WebClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+        @SuppressWarnings("rawtypes")
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         when(webClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(anyString(), any(Long.class))).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
+        when(requestHeadersUriSpec.uri(anyString(), any(Long.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.toBodilessEntity()).thenReturn(responseMono);
 
-        // When
         boolean result = userServiceClient.userExists(1L);
 
-        // Then
         assertTrue(result);
         verify(webClient).get();
         verify(requestHeadersUriSpec).uri("http://localhost:8081/users/{id}/exists", 1L);
@@ -73,18 +71,19 @@ class UserServiceClientImplTest {
     @Test
     @DisplayName("Should return false when user does not exist")
     void shouldReturnFalseWhenUserDoesNotExist() {
-        // Given
         Mono<ResponseEntity<Void>> responseMono = Mono.error(new WebClientResponseException(
                 HttpStatus.NOT_FOUND.value(), "Not Found", null, null, null));
+        @SuppressWarnings("rawtypes")
+        WebClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+        @SuppressWarnings("rawtypes")
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         when(webClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(anyString(), any(Long.class))).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
+        when(requestHeadersUriSpec.uri(anyString(), any(Long.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.toBodilessEntity()).thenReturn(responseMono);
 
-        // When
         boolean result = userServiceClient.userExists(999L);
 
-        // Then
         assertFalse(result);
         verify(webClient).get();
         verify(requestHeadersUriSpec).uri("http://localhost:8081/users/{id}/exists", 999L);
@@ -93,15 +92,17 @@ class UserServiceClientImplTest {
     @Test
     @DisplayName("Should throw InvalidUserException when WebClientResponseException occurs")
     void shouldThrowInvalidUserExceptionWhenWebClientResponseExceptionOccurs() {
-        // Given
         Mono<ResponseEntity<Void>> responseMono = Mono.error(new WebClientResponseException(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", null, null, null));
+        @SuppressWarnings("rawtypes")
+        WebClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+        @SuppressWarnings("rawtypes")
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         when(webClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(anyString(), any(Long.class))).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
+        when(requestHeadersUriSpec.uri(anyString(), any(Long.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.toBodilessEntity()).thenReturn(responseMono);
 
-        // When & Then
         InvalidUserException exception = assertThrows(InvalidUserException.class,
                 () -> userServiceClient.userExists(1L));
         assertTrue(exception.getMessage().contains("Error validating user"));
@@ -113,14 +114,16 @@ class UserServiceClientImplTest {
     @Test
     @DisplayName("Should throw InvalidUserException when generic exception occurs")
     void shouldThrowInvalidUserExceptionWhenGenericExceptionOccurs() {
-        // Given
         Mono<ResponseEntity<Void>> responseMono = Mono.error(new RuntimeException("Network error"));
+        @SuppressWarnings("rawtypes")
+        WebClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+        @SuppressWarnings("rawtypes")
+        WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         when(webClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri(anyString(), any(Long.class))).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
+        when(requestHeadersUriSpec.uri(anyString(), any(Long.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.toBodilessEntity()).thenReturn(responseMono);
 
-        // When & Then
         InvalidUserException exception = assertThrows(InvalidUserException.class,
                 () -> userServiceClient.userExists(1L));
         assertTrue(exception.getMessage().contains("Error validating user"));

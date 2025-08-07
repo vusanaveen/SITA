@@ -1,7 +1,7 @@
 package com.example.orderservice.client.impl;
 
 import com.example.orderservice.client.UserServiceClient;
-import com.example.orderservice.exception.InvalidUserException;
+import com.example.common.exception.InvalidUserException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,12 +13,12 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import java.time.Duration;
 
 /**
- * Implementation of UserServiceClient using WebClient.
+ * Implementation of UserServiceClient interface.
  * 
  * This class provides HTTP communication with UserService
- * to validate user existence.
+ * for user validation operations.
  * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @Component

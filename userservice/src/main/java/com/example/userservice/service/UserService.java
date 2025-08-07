@@ -11,7 +11,7 @@ import java.util.List;
  * This interface defines the business operations for user management
  * including CRUD operations and validation.
  * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 public interface UserService {

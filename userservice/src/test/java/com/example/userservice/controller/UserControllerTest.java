@@ -2,17 +2,20 @@ package com.example.userservice.controller;
 
 import com.example.userservice.dto.UserRequest;
 import com.example.userservice.dto.UserResponse;
-import com.example.userservice.exception.ResourceNotFoundException;
-import com.example.userservice.exception.ValidationException;
+import com.example.common.exception.ResourceNotFoundException;
+import com.example.common.exception.ValidationException;
 import com.example.userservice.service.UserService;
+import com.example.userservice.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
@@ -29,10 +32,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 
  * Tests all controller endpoints with @WebMvcTest and 100% code coverage.
  * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @WebMvcTest(UserController.class)
+@Import(com.example.userservice.exception.GlobalExceptionHandler.class)
+@AutoConfigureMockMvc(addFilters = false)
 @DisplayName("UserController Tests")
 class UserControllerTest {
 
@@ -41,6 +46,10 @@ class UserControllerTest {
 
     @MockBean
     private UserService userService;
+
+    // Ensure @WebMvcTest can instantiate the application context without data layer
+    @MockBean
+    private UserRepository userRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -64,10 +73,8 @@ class UserControllerTest {
     @Test
     @DisplayName("Should create user successfully")
     void shouldCreateUserSuccessfully() throws Exception {
-        // Given
         when(userService.createUser(any(UserRequest.class))).thenReturn(testUserResponse);
 
-        // When & Then
         mockMvc.perform(post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testUserRequest)))
@@ -82,13 +89,11 @@ class UserControllerTest {
     @Test
     @DisplayName("Should return 400 when creating user with invalid data")
     void shouldReturn400WhenCreatingUserWithInvalidData() throws Exception {
-        // Given
         UserRequest invalidRequest = new UserRequest();
-        invalidRequest.setUsername(""); // Invalid username
-        invalidRequest.setPassword("123"); // Invalid password
-        invalidRequest.setEmail("invalid-email"); // Invalid email
+        invalidRequest.setUsername(""); 
+        invalidRequest.setPassword("123");
+        invalidRequest.setEmail("invalid-email");
 
-        // When & Then
         mockMvc.perform(post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
@@ -100,10 +105,8 @@ class UserControllerTest {
     @Test
     @DisplayName("Should get user by ID successfully")
     void shouldGetUserByIdSuccessfully() throws Exception {
-        // Given
         when(userService.getUserById(1L)).thenReturn(testUserResponse);
 
-        // When & Then
         mockMvc.perform(get("/users/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
@@ -116,15 +119,12 @@ class UserControllerTest {
     @Test
     @DisplayName("Should return 404 when user not found by ID")
     void shouldReturn404WhenUserNotFoundById() throws Exception {
-        // Given
         when(userService.getUserById(1L)).thenThrow(new ResourceNotFoundException("User not found with ID: 1"));
 
-        // When & Then
         mockMvc.perform(get("/users/1"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.error").value("Resource Not Found"))
-                .andExpect(jsonPath("$.message").value("User not found with ID: 1"));
+                .andExpect(jsonPath("$.error").value("User not found with ID: 1"));
 
         verify(userService).getUserById(1L);
     }
@@ -132,7 +132,6 @@ class UserControllerTest {
     @Test
     @DisplayName("Should get all users successfully")
     void shouldGetAllUsersSuccessfully() throws Exception {
-        // Given
         UserResponse user2 = new UserResponse();
         user2.setId(2L);
         user2.setUsername("testuser2");
@@ -141,7 +140,6 @@ class UserControllerTest {
         List<UserResponse> users = Arrays.asList(testUserResponse, user2);
         when(userService.getAllUsers()).thenReturn(users);
 
-        // When & Then
         mockMvc.perform(get("/users"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
@@ -155,10 +153,8 @@ class UserControllerTest {
     @Test
     @DisplayName("Should update user successfully")
     void shouldUpdateUserSuccessfully() throws Exception {
-        // Given
         when(userService.updateUser(eq(1L), any(UserRequest.class))).thenReturn(testUserResponse);
 
-        // When & Then
         mockMvc.perform(put("/users/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testUserRequest)))
@@ -173,17 +169,15 @@ class UserControllerTest {
     @Test
     @DisplayName("Should return 404 when updating non-existent user")
     void shouldReturn404WhenUpdatingNonExistentUser() throws Exception {
-        // Given
         when(userService.updateUser(eq(1L), any(UserRequest.class)))
                 .thenThrow(new ResourceNotFoundException("User not found with ID: 1"));
 
-        // When & Then
         mockMvc.perform(put("/users/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testUserRequest)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.error").value("Resource Not Found"));
+                .andExpect(jsonPath("$.error").value("User not found with ID: 1"));
 
         verify(userService).updateUser(eq(1L), any(UserRequest.class));
     }
@@ -191,13 +185,11 @@ class UserControllerTest {
     @Test
     @DisplayName("Should return 400 when updating user with invalid data")
     void shouldReturn400WhenUpdatingUserWithInvalidData() throws Exception {
-        // Given
         UserRequest invalidRequest = new UserRequest();
-        invalidRequest.setUsername(""); // Invalid username
-        invalidRequest.setPassword("123"); // Invalid password
-        invalidRequest.setEmail("invalid-email"); // Invalid email
+        invalidRequest.setUsername("");
+        invalidRequest.setPassword("123");
+        invalidRequest.setEmail("invalid-email");
 
-        // When & Then
         mockMvc.perform(put("/users/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
@@ -209,10 +201,8 @@ class UserControllerTest {
     @Test
     @DisplayName("Should delete user successfully")
     void shouldDeleteUserSuccessfully() throws Exception {
-        // Given
         doNothing().when(userService).deleteUser(1L);
 
-        // When & Then
         mockMvc.perform(delete("/users/1"))
                 .andExpect(status().isNoContent());
 
@@ -222,15 +212,13 @@ class UserControllerTest {
     @Test
     @DisplayName("Should return 404 when deleting non-existent user")
     void shouldReturn404WhenDeletingNonExistentUser() throws Exception {
-        // Given
         doThrow(new ResourceNotFoundException("User not found with ID: 1"))
                 .when(userService).deleteUser(1L);
 
-        // When & Then
         mockMvc.perform(delete("/users/1"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.error").value("Resource Not Found"));
+                .andExpect(jsonPath("$.error").value("User not found with ID: 1"));
 
         verify(userService).deleteUser(1L);
     }
@@ -238,11 +226,9 @@ class UserControllerTest {
     @Test
     @DisplayName("Should check if user exists successfully")
     void shouldCheckIfUserExistsSuccessfully() throws Exception {
-        // Given
         when(userService.userExists(1L)).thenReturn(true);
         when(userService.userExists(2L)).thenReturn(false);
 
-        // When & Then
         mockMvc.perform(get("/users/1/exists"))
                 .andExpect(status().isOk());
 
@@ -256,18 +242,15 @@ class UserControllerTest {
     @Test
     @DisplayName("Should return 400 when validation exception occurs")
     void shouldReturn400WhenValidationExceptionOccurs() throws Exception {
-        // Given
         when(userService.createUser(any(UserRequest.class)))
-                .thenThrow(new ValidationException("Username already exists: testuser"));
+                .thenThrow(new ValidationException("Invalid input data provided"));
 
-        // When & Then
         mockMvc.perform(post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testUserRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Validation Error"))
-                .andExpect(jsonPath("$.message").value("Username already exists: testuser"));
+                .andExpect(jsonPath("$.error").value("Invalid input data provided"));
 
         verify(userService).createUser(any(UserRequest.class));
     }
@@ -275,17 +258,15 @@ class UserControllerTest {
     @Test
     @DisplayName("Should return 500 when internal server exception occurs")
     void shouldReturn500WhenInternalServerExceptionOccurs() throws Exception {
-        // Given
         when(userService.createUser(any(UserRequest.class)))
                 .thenThrow(new RuntimeException("Database connection failed"));
 
-        // When & Then
         mockMvc.perform(post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testUserRequest)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.status").value(500))
-                .andExpect(jsonPath("$.error").value("Internal Server Error"));
+                .andExpect(jsonPath("$.error").value("An unexpected error occurred"));
 
         verify(userService).createUser(any(UserRequest.class));
     }

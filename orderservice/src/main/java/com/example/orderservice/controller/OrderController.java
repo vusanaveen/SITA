@@ -1,6 +1,6 @@
 package com.example.orderservice.controller;
 
-import com.example.orderservice.dto.ErrorResponse;
+import com.example.common.dto.ErrorResponse;
 import com.example.orderservice.dto.OrderRequest;
 import com.example.orderservice.dto.OrderResponse;
 import com.example.orderservice.service.OrderService;
@@ -27,7 +27,7 @@ import java.util.List;
  * This controller provides REST endpoints for order CRUD operations
  * with proper HTTP status codes and validation.
  * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @RestController
@@ -46,25 +46,16 @@ public class OrderController {
      * @return the created order with 201 status
      */
     @PostMapping
-    @Operation(summary = "Create a new order", description = "Creates a new order with the provided information. Validates user existence with UserService.")
+    @Operation(summary = "1. Create order", description = "Creates a new order with the provided information. Validates user existence with UserService.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Order created successfully",
             content = @Content(schema = @Schema(implementation = OrderResponse.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid input data",
+        @ApiResponse(responseCode = "400", description = "Invalid input data or User not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(value = """
                     {
-                      "error": "Invalid input data provided",
+                      "error": "Quantity must be at least 1",
                       "status": 400,
-                      "timestamp": "2025-08-07T21:00:00Z"
-                    }
-                    """))),
-        @ApiResponse(responseCode = "404", description = "User not found",
-            content = @Content(schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(value = """
-                    {
-                      "error": "User not found with ID: 5",
-                      "status": 404,
                       "timestamp": "2025-08-07T21:00:00Z"
                     }
                     """))),
@@ -91,7 +82,7 @@ public class OrderController {
      * @return the order with 200 status
      */
     @GetMapping("/{id}")
-    @Operation(summary = "Get order by ID", description = "Retrieves an order by its unique identifier")
+    @Operation(summary = "2. Get order by ID", description = "Retrieves an order by its unique identifier")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Order found successfully",
             content = @Content(schema = @Schema(implementation = OrderResponse.class))),
@@ -114,7 +105,7 @@ public class OrderController {
                     }
                     """)))
     })
-    public ResponseEntity<OrderResponse> getOrderById(@Parameter(description = "Order ID") @PathVariable Long id) {
+    public ResponseEntity<OrderResponse> getOrderById(@Parameter(description = "Order ID") @PathVariable("id") Long id) {
         log.info("GET /orders/{} - Retrieving order", id);
         OrderResponse order = orderService.getOrderById(id);
         return ResponseEntity.ok(order);
@@ -126,7 +117,7 @@ public class OrderController {
      * @return list of all orders with 200 status
      */
     @GetMapping
-    @Operation(summary = "Get all orders", description = "Retrieves a list of all orders")
+    @Operation(summary = "Extra: List all orders", description = "Retrieves a list of all orders")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Orders retrieved successfully",
             content = @Content(schema = @Schema(implementation = OrderResponse.class))),
@@ -153,16 +144,16 @@ public class OrderController {
      * @return list of orders for the user with 200 status
      */
     @GetMapping("/user/{userId}")
-    @Operation(summary = "Get orders by user ID", description = "Retrieves all orders for a specific user. Validates user existence with UserService.")
+    @Operation(summary = "Extra: Get orders by user ID", description = "Retrieves all orders for a specific user. Validates user existence with UserService.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Orders retrieved successfully",
             content = @Content(schema = @Schema(implementation = OrderResponse.class))),
-        @ApiResponse(responseCode = "404", description = "User not found",
+        @ApiResponse(responseCode = "400", description = "User not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(value = """
                     {
                       "error": "User not found with ID: 5",
-                      "status": 404,
+                      "status": 400,
                       "timestamp": "2025-08-07T21:00:00Z"
                     }
                     """))),
@@ -176,7 +167,7 @@ public class OrderController {
                     }
                     """)))
     })
-    public ResponseEntity<List<OrderResponse>> getOrdersByUserId(@Parameter(description = "User ID") @PathVariable Long userId) {
+    public ResponseEntity<List<OrderResponse>> getOrdersByUserId(@Parameter(description = "User ID") @PathVariable("userId") Long userId) {
         log.info("GET /orders/user/{} - Retrieving orders for user", userId);
         List<OrderResponse> orders = orderService.getOrdersByUserId(userId);
         return ResponseEntity.ok(orders);
@@ -190,26 +181,26 @@ public class OrderController {
      * @return the updated order with 200 status
      */
     @PutMapping("/{id}")
-    @Operation(summary = "Update order by ID", description = "Updates an existing order with new information. Validates user existence with UserService.")
+    @Operation(summary = "3. Update order by ID", description = "Updates an existing order with new information. Validates user existence with UserService.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Order updated successfully",
             content = @Content(schema = @Schema(implementation = OrderResponse.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid input data",
+        @ApiResponse(responseCode = "400", description = "Invalid input data or User not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(value = """
                     {
-                      "error": "Invalid input data provided",
+                      "error": "Price must be positive",
                       "status": 400,
                       "timestamp": "2025-08-07T21:00:00Z"
                     }
                     """))),
-        @ApiResponse(responseCode = "404", description = "Order or user not found",
+        @ApiResponse(responseCode = "400", description = "Invalid input data or User not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(value = """
                     {
-                      "error": "Order not found with ID: 456",
-                      "status": 404,
-                      "timestamp": "2025-08-07T21:00:00Z"
+                      "error": "User not found with ID: 5",
+                      "status": 400,
+                      "timestamp": "2024-01-01T00:00:00Z"
                     }
                     """))),
         @ApiResponse(responseCode = "500", description = "Internal server error",
@@ -222,7 +213,7 @@ public class OrderController {
                     }
                     """)))
     })
-    public ResponseEntity<OrderResponse> updateOrder(@Parameter(description = "Order ID") @PathVariable Long id, 
+    public ResponseEntity<OrderResponse> updateOrder(@Parameter(description = "Order ID") @PathVariable("id") Long id, 
                                                    @Valid @RequestBody OrderRequest orderRequest) {
         log.info("PUT /orders/{} - Updating order", id);
         OrderResponse updatedOrder = orderService.updateOrder(id, orderRequest);
@@ -236,7 +227,7 @@ public class OrderController {
      * @return 204 No Content status
      */
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete order by ID", description = "Deletes an order by its unique identifier")
+    @Operation(summary = "4. Delete order by ID", description = "Deletes an order by its unique identifier")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "Order deleted successfully"),
         @ApiResponse(responseCode = "404", description = "Order not found",
@@ -258,7 +249,7 @@ public class OrderController {
                     }
                     """)))
     })
-    public ResponseEntity<Void> deleteOrder(@Parameter(description = "Order ID") @PathVariable Long id) {
+    public ResponseEntity<Void> deleteOrder(@Parameter(description = "Order ID") @PathVariable("id") Long id) {
         log.info("DELETE /orders/{} - Deleting order", id);
         orderService.deleteOrder(id);
         return ResponseEntity.noContent().build();

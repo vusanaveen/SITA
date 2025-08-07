@@ -1,12 +1,9 @@
-package com.example.userservice.exception;
+package com.example.common.exception;
 
 /**
- * Exception thrown when an internal server error occurs.
+ * Exception thrown for internal server errors.
  * 
- * This exception is used for unexpected errors that occur
- * during application execution.
- * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 public class InternalServerException extends RuntimeException {

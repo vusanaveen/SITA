@@ -4,9 +4,9 @@ import com.example.orderservice.client.UserServiceClient;
 import com.example.orderservice.dto.OrderRequest;
 import com.example.orderservice.dto.OrderResponse;
 import com.example.orderservice.entity.Order;
-import com.example.orderservice.exception.InvalidUserException;
-import com.example.orderservice.exception.ResourceNotFoundException;
-import com.example.orderservice.exception.ValidationException;
+import com.example.common.exception.InvalidUserException;
+import com.example.common.exception.ResourceNotFoundException;
+import com.example.common.exception.ValidationException;
 import com.example.orderservice.repository.OrderRepository;
 import com.example.orderservice.service.impl.OrderServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
  * 
  * Tests all service methods with mocked dependencies and 100% code coverage.
  * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @ExtendWith(MockitoExtension.class)
@@ -67,16 +67,57 @@ class OrderServiceImplTest {
     }
 
     @Test
+    @DisplayName("Should throw ValidationException when price is not positive")
+    void shouldThrowValidationExceptionWhenPriceIsNotPositive() {
+        OrderRequest bad = new OrderRequest();
+        bad.setUserId(1L);
+        bad.setProduct("Item");
+        bad.setQuantity(1);
+        bad.setPrice(new java.math.BigDecimal("-1.00"));
+
+        com.example.common.exception.ValidationException ex = assertThrows(com.example.common.exception.ValidationException.class,
+                () -> orderService.createOrder(bad));
+        assertEquals("Price must be positive", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should update order without changing userId successfully")
+    void shouldUpdateOrderWithoutChangingUserIdSuccessfully() {
+        com.example.orderservice.entity.Order existing = new com.example.orderservice.entity.Order();
+        existing.setId(1L);
+        existing.setUserId(1L);
+        existing.setProduct("Old");
+        existing.setQuantity(1);
+        existing.setPrice(new java.math.BigDecimal("10.00"));
+
+        when(orderRepository.findById(1L)).thenReturn(java.util.Optional.of(existing));
+
+        OrderRequest update = new OrderRequest();
+        update.setUserId(1L); // unchanged
+        update.setProduct("New");
+        update.setQuantity(2);
+        update.setPrice(new java.math.BigDecimal("20.00"));
+
+        when(orderRepository.save(any(com.example.orderservice.entity.Order.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        OrderResponse resp = orderService.updateOrder(1L, update);
+
+        assertEquals(1L, resp.getUserId());
+        assertEquals("New", resp.getProduct());
+        verify(orderRepository).findById(1L);
+        verify(orderRepository).save(any(com.example.orderservice.entity.Order.class));
+        // userServiceClient.userExists should NOT be called when userId unchanged
+        verify(userServiceClient, never()).userExists(anyLong());
+    }
+
+    @Test
     @DisplayName("Should create order successfully")
     void shouldCreateOrderSuccessfully() {
-        // Given
         when(userServiceClient.userExists(1L)).thenReturn(true);
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
 
-        // When
         OrderResponse result = orderService.createOrder(testOrderRequest);
 
-        // Then
         assertNotNull(result);
         assertEquals(testOrder.getId(), result.getId());
         assertEquals(testOrder.getUserId(), result.getUserId());
@@ -91,10 +132,8 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should throw InvalidUserException when user does not exist")
     void shouldThrowInvalidUserExceptionWhenUserDoesNotExist() {
-        // Given
         when(userServiceClient.userExists(1L)).thenReturn(false);
 
-        // When & Then
         InvalidUserException exception = assertThrows(InvalidUserException.class,
                 () -> orderService.createOrder(testOrderRequest));
         assertEquals("User not found with ID: 1", exception.getMessage());
@@ -106,7 +145,6 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should throw ValidationException when order request is null")
     void shouldThrowValidationExceptionWhenOrderRequestIsNull() {
-        // When & Then
         ValidationException exception = assertThrows(ValidationException.class,
                 () -> orderService.createOrder(null));
         assertEquals("Order request cannot be null", exception.getMessage());
@@ -118,10 +156,8 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should throw ValidationException when user ID is null")
     void shouldThrowValidationExceptionWhenUserIdIsNull() {
-        // Given
         testOrderRequest.setUserId(null);
 
-        // When & Then
         ValidationException exception = assertThrows(ValidationException.class,
                 () -> orderService.createOrder(testOrderRequest));
         assertEquals("User ID is required", exception.getMessage());
@@ -133,10 +169,8 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should throw ValidationException when product is null")
     void shouldThrowValidationExceptionWhenProductIsNull() {
-        // Given
         testOrderRequest.setProduct(null);
 
-        // When & Then
         ValidationException exception = assertThrows(ValidationException.class,
                 () -> orderService.createOrder(testOrderRequest));
         assertEquals("Product is required", exception.getMessage());
@@ -148,10 +182,8 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should throw ValidationException when product is empty")
     void shouldThrowValidationExceptionWhenProductIsEmpty() {
-        // Given
         testOrderRequest.setProduct("");
 
-        // When & Then
         ValidationException exception = assertThrows(ValidationException.class,
                 () -> orderService.createOrder(testOrderRequest));
         assertEquals("Product is required", exception.getMessage());
@@ -163,10 +195,8 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should throw ValidationException when quantity is null")
     void shouldThrowValidationExceptionWhenQuantityIsNull() {
-        // Given
         testOrderRequest.setQuantity(null);
 
-        // When & Then
         ValidationException exception = assertThrows(ValidationException.class,
                 () -> orderService.createOrder(testOrderRequest));
         assertEquals("Quantity must be at least 1", exception.getMessage());
@@ -199,7 +229,7 @@ class OrderServiceImplTest {
         // When & Then
         ValidationException exception = assertThrows(ValidationException.class,
                 () -> orderService.createOrder(testOrderRequest));
-        assertEquals("Price must be positive", exception.getMessage());
+        assertEquals("Price is required", exception.getMessage());
         
         verify(userServiceClient, never()).userExists(any(Long.class));
         verify(orderRepository, never()).save(any(Order.class));
@@ -208,10 +238,8 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should throw ValidationException when price is zero")
     void shouldThrowValidationExceptionWhenPriceIsZero() {
-        // Given
         testOrderRequest.setPrice(BigDecimal.ZERO);
 
-        // When & Then
         ValidationException exception = assertThrows(ValidationException.class,
                 () -> orderService.createOrder(testOrderRequest));
         assertEquals("Price must be positive", exception.getMessage());
@@ -223,10 +251,8 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should throw ValidationException when price is negative")
     void shouldThrowValidationExceptionWhenPriceIsNegative() {
-        // Given
         testOrderRequest.setPrice(new BigDecimal("-10.00"));
 
-        // When & Then
         ValidationException exception = assertThrows(ValidationException.class,
                 () -> orderService.createOrder(testOrderRequest));
         assertEquals("Price must be positive", exception.getMessage());
@@ -238,13 +264,10 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should get order by ID successfully")
     void shouldGetOrderByIdSuccessfully() {
-        // Given
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
 
-        // When
         OrderResponse result = orderService.getOrderById(1L);
 
-        // Then
         assertNotNull(result);
         assertEquals(testOrder.getId(), result.getId());
         assertEquals(testOrder.getUserId(), result.getUserId());
@@ -256,10 +279,8 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should throw ResourceNotFoundException when order not found by ID")
     void shouldThrowResourceNotFoundExceptionWhenOrderNotFoundById() {
-        // Given
         when(orderRepository.findById(1L)).thenReturn(Optional.empty());
 
-        // When & Then
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
                 () -> orderService.getOrderById(1L));
         assertEquals("Order not found with ID: 1", exception.getMessage());
@@ -270,7 +291,6 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should get all orders successfully")
     void shouldGetAllOrdersSuccessfully() {
-        // Given
         Order order2 = new Order();
         order2.setId(2L);
         order2.setUserId(2L);
@@ -281,10 +301,8 @@ class OrderServiceImplTest {
         List<Order> orders = Arrays.asList(testOrder, order2);
         when(orderRepository.findAll()).thenReturn(orders);
 
-        // When
         List<OrderResponse> result = orderService.getAllOrders();
 
-        // Then
         assertNotNull(result);
         assertEquals(2, result.size());
         assertEquals(testOrder.getId(), result.get(0).getId());
@@ -296,7 +314,6 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should get orders by user ID successfully")
     void shouldGetOrdersByUserIdSuccessfully() {
-        // Given
         Order order2 = new Order();
         order2.setId(2L);
         order2.setUserId(1L);
@@ -306,23 +323,35 @@ class OrderServiceImplTest {
         
         List<Order> orders = Arrays.asList(testOrder, order2);
         when(orderRepository.findByUserId(1L)).thenReturn(orders);
+        when(userServiceClient.userExists(1L)).thenReturn(true);
 
-        // When
         List<OrderResponse> result = orderService.getOrdersByUserId(1L);
 
-        // Then
         assertNotNull(result);
         assertEquals(2, result.size());
         assertEquals(testOrder.getId(), result.get(0).getId());
         assertEquals(order2.getId(), result.get(1).getId());
         
         verify(orderRepository).findByUserId(1L);
+        verify(userServiceClient).userExists(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw InvalidUserException when fetching orders for non-existent user")
+    void shouldThrowInvalidUserExceptionWhenGettingOrdersByUserIdIfUserDoesNotExist() {
+        when(userServiceClient.userExists(1L)).thenReturn(false);
+
+        InvalidUserException ex = assertThrows(InvalidUserException.class,
+                () -> orderService.getOrdersByUserId(1L));
+        assertEquals("User not found with ID: 1", ex.getMessage());
+
+        verify(userServiceClient).userExists(1L);
+        verify(orderRepository, never()).findByUserId(anyLong());
     }
 
     @Test
     @DisplayName("Should update order successfully")
     void shouldUpdateOrderSuccessfully() {
-        // Given
         OrderRequest updateRequest = new OrderRequest();
         updateRequest.setUserId(2L);
         updateRequest.setProduct("Updated Laptop");
@@ -333,10 +362,8 @@ class OrderServiceImplTest {
         when(userServiceClient.userExists(2L)).thenReturn(true);
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
 
-        // When
         OrderResponse result = orderService.updateOrder(1L, updateRequest);
 
-        // Then
         assertNotNull(result);
         assertEquals(testOrder.getId(), result.getId());
         
@@ -348,10 +375,8 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should throw ResourceNotFoundException when updating non-existent order")
     void shouldThrowResourceNotFoundExceptionWhenUpdatingNonExistentOrder() {
-        // Given
         when(orderRepository.findById(1L)).thenReturn(Optional.empty());
 
-        // When & Then
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
                 () -> orderService.updateOrder(1L, testOrderRequest));
         assertEquals("Order not found with ID: 1", exception.getMessage());
@@ -363,7 +388,6 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should throw InvalidUserException when updating with non-existent user")
     void shouldThrowInvalidUserExceptionWhenUpdatingWithNonExistentUser() {
-        // Given
         OrderRequest updateRequest = new OrderRequest();
         updateRequest.setUserId(999L);
         updateRequest.setProduct("Laptop");
@@ -373,7 +397,6 @@ class OrderServiceImplTest {
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(userServiceClient.userExists(999L)).thenReturn(false);
 
-        // When & Then
         InvalidUserException exception = assertThrows(InvalidUserException.class,
                 () -> orderService.updateOrder(1L, updateRequest));
         assertEquals("User not found with ID: 999", exception.getMessage());
@@ -386,14 +409,11 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should delete order successfully")
     void shouldDeleteOrderSuccessfully() {
-        // Given
         when(orderRepository.existsById(1L)).thenReturn(true);
         doNothing().when(orderRepository).deleteById(1L);
 
-        // When
         orderService.deleteOrder(1L);
 
-        // Then
         verify(orderRepository).existsById(1L);
         verify(orderRepository).deleteById(1L);
     }
@@ -401,10 +421,8 @@ class OrderServiceImplTest {
     @Test
     @DisplayName("Should throw ResourceNotFoundException when deleting non-existent order")
     void shouldThrowResourceNotFoundExceptionWhenDeletingNonExistentOrder() {
-        // Given
         when(orderRepository.existsById(1L)).thenReturn(false);
 
-        // When & Then
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
                 () -> orderService.deleteOrder(1L));
         assertEquals("Order not found with ID: 1", exception.getMessage());

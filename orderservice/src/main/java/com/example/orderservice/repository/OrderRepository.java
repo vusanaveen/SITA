@@ -9,10 +9,7 @@ import java.util.List;
 /**
  * Repository interface for Order entity.
  * 
- * This interface provides data access methods for Order entities
- * using Spring Data JPA.
- * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @Repository

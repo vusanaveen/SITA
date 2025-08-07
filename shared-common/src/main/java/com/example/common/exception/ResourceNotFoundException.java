@@ -1,12 +1,9 @@
-package com.example.orderservice.exception;
+package com.example.common.exception;
 
 /**
  * Exception thrown when a requested resource is not found.
  * 
- * This exception is used when attempting to retrieve, update, or delete
- * a resource that does not exist in the system.
- * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 public class ResourceNotFoundException extends RuntimeException {

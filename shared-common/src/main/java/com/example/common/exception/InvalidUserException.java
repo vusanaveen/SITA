@@ -1,12 +1,9 @@
-package com.example.orderservice.exception;
+package com.example.common.exception;
 
 /**
- * Exception thrown when a user is not found or invalid.
+ * Exception thrown when user validation fails.
  * 
- * This exception is used when attempting to create an order for
- * a user that does not exist in the UserService.
- * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 public class InvalidUserException extends RuntimeException {

@@ -6,15 +6,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.0</version>
-        <relativePath/>
+        <groupId>com.example</groupId>
+        <artifactId>microservices-parent</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>com.example</groupId>
     <artifactId>orderservice</artifactId>
-    <version>1.0.0</version>
+    <packaging>jar</packaging>
     <name>OrderService</name>
     <description>Order management microservice</description>
 
@@ -24,9 +23,17 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jacoco.version>0.8.11</jacoco.version>
+        <lombok.version>1.18.30</lombok.version>
     </properties>
 
     <dependencies>
+        <!-- Shared Common Module -->
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>shared-common</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- Spring Boot Starters -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -40,11 +47,6 @@
         
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
@@ -52,13 +54,6 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-        </dependency>
-        
-        <!-- Swagger/OpenAPI Documentation -->
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.3.0</version>
         </dependency>
 
         <!-- Lombok -->
@@ -93,6 +88,32 @@
                 </configuration>
             </plugin>
 
+            <!-- Inject viewport meta into JaCoCo HTML reports to satisfy accessibility/audit checks -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>inject-viewport-into-jacoco-html</id>
+                        <phase>package</phase>
+                        <configuration>
+                            <target>
+                                <echo message="Injecting viewport meta into JaCoCo HTML reports..."/>
+                                <replaceregexp byline="false" flags="s" match="&lt;head&gt;" replace="&lt;head&gt;&#10;&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;">
+                                    <fileset dir="${project.build.directory}/site/jacoco">
+                                        <include name="**/*.html"/>
+                                    </fileset>
+                                </replaceregexp>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- JaCoCo Plugin for Code Coverage -->
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -119,7 +140,14 @@
                         <configuration>
                             <rules>
                                 <rule>
-                                    <element>BUNDLE</element>
+                                    <element>CLASS</element>
+                                    <excludes>
+                                        <exclude>com.example.orderservice.OrderServiceApplication*</exclude>
+                                        <exclude>com.example.orderservice.config.*</exclude>
+                                        <exclude>com.example.orderservice.dto.*</exclude>
+                                        <exclude>com.example.orderservice.entity.*</exclude>
+                                        <exclude>com.example.orderservice.exception.*</exclude>
+                                    </excludes>
                                     <limits>
                                         <limit>
                                             <counter>LINE</counter>

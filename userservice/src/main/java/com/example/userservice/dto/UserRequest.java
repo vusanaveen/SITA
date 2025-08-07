@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
  * This class represents the data transfer object used for
  * receiving user data from REST API requests.
  * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @Data

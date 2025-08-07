@@ -17,7 +17,7 @@ import java.math.BigDecimal;
  * This entity is used for storing order information including
  * user ID, product details, quantity, and price.
  * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @Entity

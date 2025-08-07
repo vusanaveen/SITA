@@ -17,7 +17,7 @@ import java.math.BigDecimal;
  * This class represents the data transfer object used for
  * receiving order data from REST API requests.
  * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @Data

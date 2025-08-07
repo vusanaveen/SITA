@@ -2,17 +2,20 @@ package com.example.orderservice.controller;
 
 import com.example.orderservice.dto.OrderRequest;
 import com.example.orderservice.dto.OrderResponse;
-import com.example.orderservice.exception.InvalidUserException;
-import com.example.orderservice.exception.ResourceNotFoundException;
+import com.example.common.exception.InvalidUserException;
+import com.example.common.exception.ResourceNotFoundException;
 import com.example.orderservice.service.OrderService;
+import com.example.orderservice.repository.OrderRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -30,10 +33,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 
  * Tests all controller endpoints with @WebMvcTest and 100% code coverage.
  * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @WebMvcTest(OrderController.class)
+@Import(com.example.orderservice.exception.GlobalExceptionHandler.class)
+@AutoConfigureMockMvc(addFilters = false)
 @DisplayName("OrderController Tests")
 class OrderControllerTest {
 
@@ -42,6 +47,10 @@ class OrderControllerTest {
 
     @MockBean
     private OrderService orderService;
+
+    // Avoid accidental data layer autowiring in slice tests
+    @MockBean
+    private OrderRepository orderRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -68,10 +77,8 @@ class OrderControllerTest {
     @Test
     @DisplayName("Should create order successfully")
     void shouldCreateOrderSuccessfully() throws Exception {
-        // Given
         when(orderService.createOrder(any(OrderRequest.class))).thenReturn(testOrderResponse);
 
-        // When & Then
         mockMvc.perform(post("/orders")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testOrderRequest)))
@@ -88,14 +95,12 @@ class OrderControllerTest {
     @Test
     @DisplayName("Should return 400 when creating order with invalid data")
     void shouldReturn400WhenCreatingOrderWithInvalidData() throws Exception {
-        // Given
         OrderRequest invalidRequest = new OrderRequest();
-        invalidRequest.setUserId(null); // Invalid user ID
-        invalidRequest.setProduct(""); // Invalid product
-        invalidRequest.setQuantity(0); // Invalid quantity
-        invalidRequest.setPrice(BigDecimal.ZERO); // Invalid price
+        invalidRequest.setUserId(null);
+        invalidRequest.setProduct("");
+        invalidRequest.setQuantity(0);
+        invalidRequest.setPrice(BigDecimal.ZERO);
 
-        // When & Then
         mockMvc.perform(post("/orders")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
@@ -107,10 +112,8 @@ class OrderControllerTest {
     @Test
     @DisplayName("Should get order by ID successfully")
     void shouldGetOrderByIdSuccessfully() throws Exception {
-        // Given
         when(orderService.getOrderById(1L)).thenReturn(testOrderResponse);
 
-        // When & Then
         mockMvc.perform(get("/orders/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
@@ -125,15 +128,12 @@ class OrderControllerTest {
     @Test
     @DisplayName("Should return 404 when order not found by ID")
     void shouldReturn404WhenOrderNotFoundById() throws Exception {
-        // Given
         when(orderService.getOrderById(1L)).thenThrow(new ResourceNotFoundException("Order not found with ID: 1"));
 
-        // When & Then
         mockMvc.perform(get("/orders/1"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.error").value("Resource Not Found"))
-                .andExpect(jsonPath("$.message").value("Order not found with ID: 1"));
+                .andExpect(jsonPath("$.error").value("Order not found with ID: 1"));
 
         verify(orderService).getOrderById(1L);
     }
@@ -141,7 +141,6 @@ class OrderControllerTest {
     @Test
     @DisplayName("Should get all orders successfully")
     void shouldGetAllOrdersSuccessfully() throws Exception {
-        // Given
         OrderResponse order2 = new OrderResponse();
         order2.setId(2L);
         order2.setUserId(2L);
@@ -152,7 +151,6 @@ class OrderControllerTest {
         List<OrderResponse> orders = Arrays.asList(testOrderResponse, order2);
         when(orderService.getAllOrders()).thenReturn(orders);
 
-        // When & Then
         mockMvc.perform(get("/orders"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
@@ -166,7 +164,6 @@ class OrderControllerTest {
     @Test
     @DisplayName("Should get orders by user ID successfully")
     void shouldGetOrdersByUserIdSuccessfully() throws Exception {
-        // Given
         OrderResponse order2 = new OrderResponse();
         order2.setId(2L);
         order2.setUserId(1L);
@@ -177,7 +174,6 @@ class OrderControllerTest {
         List<OrderResponse> orders = Arrays.asList(testOrderResponse, order2);
         when(orderService.getOrdersByUserId(1L)).thenReturn(orders);
 
-        // When & Then
         mockMvc.perform(get("/orders/user/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
@@ -191,10 +187,8 @@ class OrderControllerTest {
     @Test
     @DisplayName("Should update order successfully")
     void shouldUpdateOrderSuccessfully() throws Exception {
-        // Given
         when(orderService.updateOrder(eq(1L), any(OrderRequest.class))).thenReturn(testOrderResponse);
 
-        // When & Then
         mockMvc.perform(put("/orders/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testOrderRequest)))
@@ -211,17 +205,15 @@ class OrderControllerTest {
     @Test
     @DisplayName("Should return 404 when updating non-existent order")
     void shouldReturn404WhenUpdatingNonExistentOrder() throws Exception {
-        // Given
         when(orderService.updateOrder(eq(1L), any(OrderRequest.class)))
                 .thenThrow(new ResourceNotFoundException("Order not found with ID: 1"));
 
-        // When & Then
         mockMvc.perform(put("/orders/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testOrderRequest)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.error").value("Resource Not Found"));
+                .andExpect(jsonPath("$.error").value("Order not found with ID: 1"));
 
         verify(orderService).updateOrder(eq(1L), any(OrderRequest.class));
     }
@@ -229,14 +221,12 @@ class OrderControllerTest {
     @Test
     @DisplayName("Should return 400 when updating order with invalid data")
     void shouldReturn400WhenUpdatingOrderWithInvalidData() throws Exception {
-        // Given
         OrderRequest invalidRequest = new OrderRequest();
-        invalidRequest.setUserId(null); // Invalid user ID
-        invalidRequest.setProduct(""); // Invalid product
-        invalidRequest.setQuantity(0); // Invalid quantity
-        invalidRequest.setPrice(BigDecimal.ZERO); // Invalid price
+        invalidRequest.setUserId(null);
+        invalidRequest.setProduct("");
+        invalidRequest.setQuantity(0);
+        invalidRequest.setPrice(BigDecimal.ZERO);
 
-        // When & Then
         mockMvc.perform(put("/orders/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
@@ -248,10 +238,8 @@ class OrderControllerTest {
     @Test
     @DisplayName("Should delete order successfully")
     void shouldDeleteOrderSuccessfully() throws Exception {
-        // Given
         doNothing().when(orderService).deleteOrder(1L);
 
-        // When & Then
         mockMvc.perform(delete("/orders/1"))
                 .andExpect(status().isNoContent());
 
@@ -261,15 +249,13 @@ class OrderControllerTest {
     @Test
     @DisplayName("Should return 404 when deleting non-existent order")
     void shouldReturn404WhenDeletingNonExistentOrder() throws Exception {
-        // Given
         doThrow(new ResourceNotFoundException("Order not found with ID: 1"))
                 .when(orderService).deleteOrder(1L);
 
-        // When & Then
         mockMvc.perform(delete("/orders/1"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.error").value("Resource Not Found"));
+                .andExpect(jsonPath("$.error").value("Order not found with ID: 1"));
 
         verify(orderService).deleteOrder(1L);
     }
@@ -277,18 +263,15 @@ class OrderControllerTest {
     @Test
     @DisplayName("Should return 400 when invalid user exception occurs")
     void shouldReturn400WhenInvalidUserExceptionOccurs() throws Exception {
-        // Given
         when(orderService.createOrder(any(OrderRequest.class)))
                 .thenThrow(new InvalidUserException("User not found with ID: 999"));
 
-        // When & Then
         mockMvc.perform(post("/orders")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testOrderRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid User"))
-                .andExpect(jsonPath("$.message").value("User not found with ID: 999"));
+                .andExpect(jsonPath("$.error").value("User not found with ID: 999"));
 
         verify(orderService).createOrder(any(OrderRequest.class));
     }
@@ -296,17 +279,15 @@ class OrderControllerTest {
     @Test
     @DisplayName("Should return 500 when internal server exception occurs")
     void shouldReturn500WhenInternalServerExceptionOccurs() throws Exception {
-        // Given
         when(orderService.createOrder(any(OrderRequest.class)))
                 .thenThrow(new RuntimeException("Database connection failed"));
 
-        // When & Then
         mockMvc.perform(post("/orders")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(testOrderRequest)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.status").value(500))
-                .andExpect(jsonPath("$.error").value("Internal Server Error"));
+                .andExpect(jsonPath("$.error").value("An unexpected error occurred"));
 
         verify(orderService).createOrder(any(OrderRequest.class));
     }

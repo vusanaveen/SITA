@@ -1,52 +1,29 @@
 package com.example.orderservice.config;
 
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Contact;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
-import io.swagger.v3.oas.models.servers.Server;
-import org.springframework.context.annotation.Bean;
+import com.example.common.config.BaseOpenApiConfig;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.List;
-
 /**
- * OpenAPI/Swagger configuration for OrderService.
+ * OpenAPI configuration for OrderService.
  * 
- * Provides API documentation and interactive testing interface.
- * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @Configuration
-public class OpenApiConfig {
+public class OpenApiConfig extends BaseOpenApiConfig {
 
-    @Bean
-    public OpenAPI orderServiceOpenAPI() {
-        Server devServer = new Server();
-        devServer.setUrl("http://localhost:8082");
-        devServer.setDescription("Development server for OrderService");
+    @Override
+    protected String getServiceName() {
+        return "Order Service API";
+    }
 
-        Contact contact = new Contact();
-        contact.setName("Senior Consultant");
-        contact.setEmail("consultant@example.com");
+    @Override
+    protected String getServiceDescription() {
+        return "REST API for order management operations";
+    }
 
-        License mitLicense = new License()
-                .name("MIT License")
-                .url("https://opensource.org/licenses/MIT");
-
-        Info info = new Info()
-                .title("OrderService API")
-                .version("1.0.0")
-                .description("This API provides CRUD operations for Order entities. " +
-                        "It manages order information including user ID, product, quantity, and price. " +
-                        "The service validates user existence with UserService before creating orders. " +
-                        "It uses H2 in-memory database for data persistence.")
-                .contact(contact)
-                .license(mitLicense);
-
-        return new OpenAPI()
-                .info(info)
-                .servers(List.of(devServer));
+    @Override
+    protected String getServerUrl() {
+        return "http://localhost:8082";
     }
 }

@@ -1,12 +1,9 @@
-package com.example.orderservice.exception;
+package com.example.common.exception;
 
 /**
  * Exception thrown when validation fails.
  * 
- * This exception is used when input data fails validation
- * rules or business logic validation.
- * 
- * @author Naveen V
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 public class ValidationException extends RuntimeException {

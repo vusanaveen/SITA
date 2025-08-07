@@ -1,12 +1,9 @@
 package com.example.orderservice.client;
 
 /**
- * Client interface for communicating with UserService.
+ * Client interface for UserService communication.
  * 
- * This interface defines methods for validating user existence
- * by calling the UserService API.
- * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 public interface UserServiceClient {

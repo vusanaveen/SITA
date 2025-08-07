@@ -12,7 +12,7 @@ import java.util.Optional;
  * This interface provides data access methods for User entities
  * using Spring Data JPA.
  * 
- * @author Senior Consultant
+ * @author Naveen Vusa
  * @version 1.0.0
  */
 @Repository
