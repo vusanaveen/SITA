@@ -22,6 +22,7 @@ SITA/
 ### About `shared-common`
 
 - Used by: Both `userservice` and `orderservice` (built first during root build).
+ - Contains base exception handler, error DTO, and base OpenAPI config reused by both services.
 
 
 ## Technology Stack
@@ -36,33 +37,6 @@ SITA/
 - **Maven** - Build tool
 - **Jacoco** - Code coverage
 - **springdoc-openapi** (OpenAPI 3) with Swagger UI (code-first generation)
-
-## Services
-
-### UserService (Port: 8081)
-- CRUD operations for User entity
-- Endpoints (as required):
-  1. POST `/users` — Create a user
-  2. GET `/users/{id}` — Retrieve a user by ID
-  3. PUT `/users/{id}` — Update a user by ID
-  4. DELETE `/users/{id}` — Delete a user by ID
-- Extra endpoints (for demo/testing convenience):
-  - GET `/users` — List all users
-  - GET `/users/{id}/exists` — Lightweight existence check used by OrderService
- - **Swagger UI**: http://localhost:8081/swagger-ui/index.html
-
-### OrderService (Port: 8082)
-- CRUD operations for Order entity
-- Validates user existence via UserService before creating/updating orders
-- Endpoints (as required):
-  1. POST `/orders` — Create an order
-  2. GET `/orders/{id}` — Retrieve an order by ID
-  3. PUT `/orders/{id}` — Update an order by ID
-  4. DELETE `/orders/{id}` — Delete an order by ID
-- Extra endpoints (for demo/testing convenience):
-  - GET `/orders` — List all orders
-  - GET `/orders/user/{userId}` — List all orders for a user
- - **Swagger UI**: http://localhost:8082/swagger-ui/index.html
 
 
 ## Prerequisites
@@ -81,9 +55,11 @@ This builds all modules in the correct dependency order: `shared-common` → `us
 
 ### Build a Single Module
 ```bash
-# Only userservice//orderservice cd 
+cd userservice
 mvn clean install
 
+cd ../orderservice
+mvn clean install
 ```
 
 ### Run Services
@@ -113,11 +89,9 @@ cd userservice
 mvn test jacoco:report
 
 
-
 # OrderService tests
 cd ../orderservice
 mvn test jacoco:report
-
 
 
 ### Coverage Reports
@@ -126,93 +100,15 @@ mvn test jacoco:report
 
 ## API Documentation
 
-We use `springdoc-openapi` to generate OpenAPI 3 specs and serve Swagger UI.
+We use `springdoc-openapi` with Swagger UI. Use Swagger for endpoint details and try-outs:
 
-- UserService: `http://localhost:8081/swagger-ui/index.html`
-- OrderService: `http://localhost:8082/swagger-ui/index.html`
+- UserService Swagger UI: `http://localhost:8081/swagger-ui/index.html`
+- OrderService Swagger UI: `http://localhost:8082/swagger-ui/index.html`
 
-The documentation includes:
-- Interactive API testing interface
-- Request/response schemas
-- Example payloads
-- HTTP status codes
-- Parameter descriptions
 
 ## API Endpoints
 
-### UserService (http://localhost:8081)
-
-#### Create User
-```bash
-POST /users
-Content-Type: application/json
-
-{
-  "username": "john_doe",
-  "password": "password123",
-  "email": "john@example.com"
-}
-```
-
-#### Get User
-```bash
-GET /users/{id}
-```
-
-#### Update User
-```bash
-PUT /users/{id}
-Content-Type: application/json
-
-{
-  "username": "john_doe_updated",
-  "password": "newpassword123",
-  "email": "john.updated@example.com"
-}
-```
-
-#### Delete User
-```bash
-DELETE /users/{id}
-```
-
-### OrderService (http://localhost:8082)
-
-#### Create Order
-```bash
-POST /orders
-Content-Type: application/json
-
-{
-  "userId": 1,
-  "product": "Laptop",
-  "quantity": 2,
-  "price": 999.99
-}
-```
-
-#### Get Order
-```bash
-GET /orders/{id}
-```
-
-#### Update Order
-```bash
-PUT /orders/{id}
-Content-Type: application/json
-
-{
-  "userId": 1,
-  "product": "Laptop Pro",
-  "quantity": 1,
-  "price": 1299.99
-}
-```
-
-#### Delete Order
-```bash
-DELETE /orders/{id}
-```
+Refer to Swagger UI for the full, up-to-date endpoint list and request/response models.
 
 ## Sample Data
 
@@ -245,7 +141,7 @@ OrderService communicates with UserService to validate user existence before cre
 - No pagination or filtering required
 - No API gateway or service discovery
 - Static ports (UserService: 8081, OrderService: 8082)
-- Hardcoded service URLs for simplicity
+- Static service URLs via application.yml
 
 ## Code Coverage
 
@@ -258,54 +154,22 @@ Both services include comprehensive unit and slice tests:
 
 Generate coverage reports with Jacoco (see commands above) and open the HTML reports to review coverage.
 
-## Acceptance Criteria Mapping (for reviewer)
+## Services
 
-- UserService
-  - Should be able to add user — POST `/users` (visible as “1. Create user” in Swagger)
-  - Should be able to retrieve users by Id — GET `/users/{id}` (“2. Get user by ID”)
-  - Should be able to update user by Id — PUT `/users/{id}` (“3. Update user by ID”)
-  - Should be able to delete user by Id — DELETE `/users/{id}` (“4. Delete user by ID”)
-  - Handling of duplicate users should not be handled — no duplicate checks enforced in service
-  - Exception Handling — centralized `@RestControllerAdvice`, custom exceptions and consistent status codes
+### UserService
+- CRUD for User entity
+- Handling of duplicate users should not be handled — no duplicate checks enforced in service
+ - Exception handling — centralized `@RestControllerAdvice`, custom exceptions and consistent status codes
 
-- OrderService
-  - Communicates with UserService to validate user existence before creating an order
-  - Should be able to create order — POST `/orders` (“1. Create order”)
-  - Should be able to retrieve order by Id — GET `/orders/{id}` (“2. Get order by ID”)
-  - Should be able to update order by Id — PUT `/orders/{id}` (“3. Update order by ID”)
-  - Should be able to delete order by Id — DELETE `/orders/{id}` (“4. Delete order by ID”)
-  - Exception Handling — centralized `@RestControllerAdvice`, custom exceptions and consistent status codes
-
-## Development Guidelines
-
-- Follow TDD (Test-Driven Development) approach
-- Use meaningful exception messages
-- Implement proper logging
-- Follow REST API best practices
-- Maintain clean, modular code structure
-- Use DTOs for request/response handling
-- Implement proper validation
+### OrderService 
+- CRUD for Order entity
+- Validates user existence via UserService before creating/updating orders
+ - Exception handling — centralized `@RestControllerAdvice`, custom exceptions and consistent status codes
 
 ## Troubleshooting
 
-### Common Issues
+1. Ports already in use
+   - Change ports in each service `application.yml`
+2. Service communication
+   - Ensure both services are running and URLs match configuration.
 
-1. **Port Already in Use**
-   - Change ports in `application.yml` files
-   - Kill existing processes using the ports
-
-2. **Database Connection Issues**
-   - Ensure H2 database is properly configured
-   - Check `data.sql` files for syntax errors
-
-3. **Service Communication Issues**
-   - Verify both services are running
-   - Check network connectivity between services
-   - Validate service URLs in configuration
-
-### H2 Console
-
-- UserService H2 Console: `http://localhost:8081/h2-console`
-- OrderService H2 Console: `http://localhost:8082/h2-console`
-
-Use JDBC URLs from each service's `application.yml` (e.g., `jdbc:h2:mem:userdb`, `jdbc:h2:mem:orderdb`).
