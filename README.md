@@ -87,12 +87,13 @@ Swagger UI: `http://localhost:8082/swagger-ui/index.html`
 # UserService tests
 cd userservice
 mvn test jacoco:report
+```
 
-
+```bash
 # OrderService tests
 cd ../orderservice
 mvn test jacoco:report
-
+```
 
 ### Coverage Reports
 - UserService: `userservice/target/site/jacoco/index.html`
