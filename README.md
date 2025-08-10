@@ -1,6 +1,6 @@
 # Microservices Project - UserService & OrderService
 
-This project demonstrates a microservices architecture using Spring Boot 3+ and Java 21 with two independent services: UserService and OrderService.
+This project demonstrates a microservices architecture using Spring Boot 3+ and Java 21 with two independent services: UserService and OrderService.  
 In addition to the stated requirements, the project also includes full Swagger/OpenAPI documentation with detailed example responses for various HTTP statuses, making the APIs easier to explore, test, and maintain.
 ## Project Structure
 
